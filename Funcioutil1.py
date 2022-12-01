@@ -158,7 +158,21 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 	return descripciones
 #TERMINA DESCRIPCIÓN AUDIO
 
+#FECHA:
+def obtener_timestamp(lista_timestamp:list):
+
+    lista_fechas = list()
+			
+    for valores in lista_timestamp:
+
+        valores = datetime.fromtimestamp(float(valores))
+        lista_fechas.append(valores)
+
+    return lista_fechas
+#TERMINA FECHA
+
 #PUNTO 5
+
 def obtener_lista_timestamp()->list:
 
 	datos: list = []
@@ -315,9 +329,10 @@ def graficar_denuncias_mensuales(fechas:list)->None:
 	plt.show()
 #TERMINA PUNTO 7
 
-def obtener_datos_Brutos(datos_Brutos: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->None:
+def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->None:
 
 	for registro in range(len(datos_Brutos)):
+		timestamps.append(datos_Brutos[registro][0])
 		latitud.append(datos_Brutos[registro][2])
 		longitud.append(datos_Brutos[registro][3])
 		rutas_audios.append(datos_Brutos[registro][6])
@@ -339,18 +354,22 @@ def procesar_Datos(datos_Brutos: list, latitud: list, longitud: list, rutas_audi
 	direccion: list = crear_lista_direcciones(latitud, longitud) # devuelve lista de dirección tras procesar latitud y longitud
 	patentes: list = validar_patentes(rutas_fotos) # devuelve lista de patentes tras procesar imágeness
 	descripciones_audios: list = obtener_descripcion_audio(rutas_audios) # devuelve lista de descripciones tras procesar audio
-	datos_Procesados: list = obtener_datos_Procesados(datos_Brutos, fecha, direccion,patentes, descripciones_audios)
+	datos_Procesados: list = compaginar_datos_Procesados(datos_Brutos, fecha, direccion,patentes, descripciones_audios)
 
 def main()->None:
 	datos_Brutos: list = lectura_archivo() # obtiene matríz, recibe ruta del archivo csv
+	timestamps: list = []
 	latitud: list = []
 	longitud: list = []
 	rutas_audios: list = []
 	rutas_fotos: list = []
 
-	obtener_datos_Brutos(datos_Brutos, latitud, longitud, rutas_audios, rutas_fotos)
-	direcciones, patentes, descripciones = procesar_Datos(datos_Brutos,latitud, longitud, rutas_audios, rutas_fotos)# obtiene datos procesados de Dirección, descripción, patentes
-
-	escribir_archivo() 
+	obtener_datos_Brutos(datos_Brutos, timestamps, latitud, longitud, rutas_audios, rutas_fotos)
+	#direcciones, patentes, descripciones = procesar_Datos(datos_Brutos,latitud, longitud, rutas_audios, rutas_fotos)# obtiene datos procesados de Dirección, descripción, patentes
+	fechas: list = obtener_timestamp(timestamps)
+	direcciones: list = crear_lista_direcciones(latitud, longitud)
+	patentes: list = validar_patentes(rutas_fotos)
+	print(patentes)
+	#escribir_archivo() 
 
 main()
