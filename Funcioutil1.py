@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from datetime import datetime
 import requests
+import copy
 
 def lectura_archivo()->list:
 	denuncias:list=[]
@@ -82,8 +83,8 @@ def infracciones_del_centro(infracciones_procesadas:list):
 
 	for registro in range (len(infracciones_procesadas)):
 		coordenadas_infraccion:list=conseguir_coordenadas(infracciones_procesadas[registro][2])
-		lat:float=float(coordenadas_infraccion[0])#esto lo pongo para facilitar la lectura del "if" q sigue a continuacion         
-		lon:float=float(coordenadas_infraccion[1])#esto lo pongo para facilitar la lectura del "if" q sigue a continuacion
+		lat:float=float(coordenadas_infraccion[0])        
+		lon:float=float(coordenadas_infraccion[1])
 		#la condicion del if basicamente pide que se encuentre dentro del rectangulo delimitado por las calles dadas
 		if ((lat>(zona_centro[0][0]) and lat<(zona_centro[1][0])) and (lon>(zona_centro[1][1]) and lon<(zona_centro[2][1]))):
 			infracciones_zona_centro.append(infracciones_procesadas[registro])
@@ -92,7 +93,7 @@ def infracciones_del_centro(infracciones_procesadas:list):
 		print (f"\n{registro}")
 	
 def infracciones_estadios(infracciones:list):
-#Recibe la lista de infracciones, muestra las 
+#Recibe la lista de infracciones, muestra las direcciones
 	infracciones_bombonera:list=[]
 	infracciones_monumental:list=[]
 	bombonera:list=conseguir_coordenadas("estadio Alberto J. Armando")
@@ -120,21 +121,11 @@ def mostrar_patente(ruta_imagen):
 			'https://api.platerecognizer.com/v1/plate-reader/',
 			files=dict(upload=fp), 
 			headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
-	# if len(response.json()["results"]) == 0:
-	# 	devolver = False #No se pudo detectar la patente
-	# else:
-	# 	for key, value in (response.json()).items():
-	# 		if key == "results":
-	# 			for valores in value: 
-	# 				for llave, info in valores.items(): 
-	# 					if llave == 'plate':    #Si la clave del diccionario es 'plate' te devuelve la info que tiene
-	# 						devolver = info
-	# return(devolver)
+
 		for key, value in (response.json()).items():
 			if key == "results":
 				for valores in value: 
 					patente: str = valores['plate']
-					# ojo el None :/
 					return patente
 
 def validar_patentes(lista):
@@ -183,7 +174,7 @@ def obtener_lista_timestamp()->list:
 	datos: list = []
 	fechas: list = []
 
-	with open("denuncias_procesadas.csv", newline='', encoding="UTF-8") as archivo_csv:
+	with open("denuncias_procesadas.csv", newline='') as archivo_csv:
 
 		next(archivo_csv)
 
@@ -193,7 +184,7 @@ def obtener_lista_timestamp()->list:
 			datos.append(lineas[0])
 
 
-	with open("Timestamp.csv", 'w', newline ='', encoding="UTF-8") as archivo_csv:
+	with open("Timestamp.csv", 'w', newline ='') as archivo_csv:
 
 			csv_writer = csv.writer(archivo_csv)
 
@@ -202,11 +193,11 @@ def obtener_lista_timestamp()->list:
 			csv_writer.writerow(datos)
 
 
-	with open("Timestamp.csv", newline='', encoding="UTF-8") as archivo_csv:
+	with open("Timestamp.csv", newline='') as archivo_csv:
 
 		next(archivo_csv)
 
-		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True, quotechar='"', quoting= csv.QUOTE_NONNUMERIC)
+		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
 
 		for lineas in csv_reader:
 			fechas.append(lineas)
@@ -217,7 +208,7 @@ def patente_sospechosa(fechas:list)->None:
 
 	datos = list()
 
-	with open("denuncias_procesadas.csv", newline='', encoding="UTF-8") as archivo_csv:
+	with open("denuncias_procesadas.csv", newline='') as archivo_csv:
 
 
 		next(archivo_csv)
@@ -238,12 +229,11 @@ def patente_sospechosa(fechas:list)->None:
 	patentes_alerta: dict = {}
 
 	for informacion in datos:
-		if informacion[5] in patentes_buscada:
-			patentes_alerta[informacion[5]] = [informacion[0], informacion[2]]
+		if informacion[3] in patentes_buscada:
+			patentes_alerta[informacion[3]] = [informacion[0], informacion[2]]
 
 	for key, valor in patentes_alerta.items():
-		fecha = datetime.fromtimestamp(float(valor[0]))
-		print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {fecha} en {valor[1]} ')
+		print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]} ')
 
 #TERMINA PUNTO 5
 
@@ -265,11 +255,12 @@ def mostrar_mapa(lat: str, long: str):
 	plt.annotate("denuncia", xy = (x,y), xytext=(-20,20))
 	plt.show()
 
-def mostrar_infractor(datos_Brutos, datos_Procesados):
+def mostrar_infractor(datos_Brutos: list, datos_Procesados: list):
 	patente: str = input("Ingrese la patente: ")
 	for i in range(len(datos_Procesados)):
 		if datos_Procesados[i][3] == patente:
 			indice: int = i
+		
 	ruta_foto: str = datos_Brutos[indice][4]
 	mostrar_foto_patente(ruta_foto)
 
@@ -281,8 +272,11 @@ def mostrar_infractor(datos_Brutos, datos_Procesados):
 
 # PUNTO 7: 
 def graficar_denuncias_mensuales(fechas:list)->None:
-
-	informacion: list = fechas
+	fechas_timestamps: list = []
+	for fecha in fechas:
+		for horario in fecha:
+			timestamp = datetime.fromisoformat(horario).timestamp()
+			fechas_timestamps.append(timestamp)
 
 	enero: int = 0  
 	febrero: int = 0
@@ -297,33 +291,32 @@ def graficar_denuncias_mensuales(fechas:list)->None:
 	noviembre: int = 0
 	diciembre: int = 0
 
-	for informacion in fechas:
-		for fecha in informacion:
-			if 1641006000 <= fecha <= 1643684399:
-				enero += 1
-			if 1643684400 <= fecha <= 1646103599:
-				febrero += 1
-			if 1646103600 <= fecha <= 1648781999:
-				marzo += 1
-			if 1648782000 <= fecha <= 1651373999:
-				abril += 1
-			if 1651374000 <= fecha <= 1654052399:
-				mayo += 1
-			if 1654052400 <= fecha <= 1656644399:
-				junio += 1
-			if 1656644400 <= fecha <= 1659322799:
-				julio += 1
-			if 1659322800 <= fecha <= 1662001199:
-				agosto += 1
-			if 1662001200 <= fecha <= 1664593199:
-				septiembre += 1
-			if 1664593200 <= fecha <= 1667271599:
-				octubre += 1
-			if 1667271600 <= fecha <= 1669863599:
-				noviembre += 1
-			if 1669863600 <= fecha <= 1672541999:
-				diciembre += 1
-		
+	for timestamp in fechas_timestamps:
+		if 1641006000 <= timestamp <= 1643684399:
+			enero += 1
+		if 1643684400 <= timestamp <= 1646103599:
+			febrero += 1
+		if 1646103600 <= timestamp <= 1648781999:
+			marzo += 1
+		if 1648782000 <= timestamp <= 1651373999:
+			abril += 1
+		if 1651374000 <= timestamp <= 1654052399:
+			mayo += 1
+		if 1654052400 <= timestamp <= 1656644399:
+			junio += 1
+		if 1656644400 <= timestamp <= 1659322799:
+			julio += 1
+		if 1659322800 <= timestamp <= 1662001199:
+			agosto += 1
+		if 1662001200 <= timestamp <= 1664593199:
+			septiembre += 1
+		if 1664593200 <= timestamp <= 1667271599:
+			octubre += 1
+		if 1667271600 <= timestamp <= 1669863599:
+			noviembre += 1
+		if 1669863600 <= timestamp <= 1672541999:
+			diciembre += 1
+			
 	x: list = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"]
 	y: list = [enero,febrero,marzo,abril,mayo,junio,julio,agosto,septiembre,octubre,noviembre,diciembre]
 
@@ -343,17 +336,17 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 		rutas_audios.append(datos_Brutos[registro][6])
 		rutas_fotos.append(datos_Brutos[registro][4])
 
-def compaginar_datos_Procesados(datos:list, fecha:list, direccion:list, patentes:list, descripciones_audios:list)->list:
-	
-	for i in range(len(datos)):
-		datos[i][0] = fecha[i]
-		datos[i][2] = direccion[i]
-		datos[i][3] = patentes[i]
-		datos[i][4] = datos[i][5]
-		datos[i][5] = descripciones_audios[i]
-		datos[i].pop(6)
+def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, patentes:list, descripciones_audios:list)->list:
+	datos_procesados: list = copy.deepcopy(datos_Brutos)
+	for i in range(len(datos_Brutos)):
+		datos_procesados[i][0] = fecha[i]
+		datos_procesados[i][2] = direccion[i]
+		datos_procesados[i][3] = patentes[i]
+		datos_procesados[i][4] = datos_Brutos[i][5]
+		datos_procesados[i][5] = descripciones_audios[i]
+		datos_procesados[i].pop(6)
 
-	return datos
+	return datos_procesados
 
 def main()->None:
 	datos_Brutos: list = lectura_archivo() # obtiene matríz, recibe ruta del archivo csv
@@ -364,25 +357,29 @@ def main()->None:
 	rutas_fotos: list = []
 
 	obtener_datos_Brutos(datos_Brutos, timestamps, latitud, longitud, rutas_audios, rutas_fotos)
-	#direcciones, patentes, descripciones = procesar_Datos(datos_Brutos,latitud, longitud, rutas_audios, rutas_fotos)# obtiene datos procesados de Dirección, descripción, patentes
+	
+	#ITEM 2
 	fechas: list = obtener_timestamp(timestamps)
 	direcciones: list = crear_lista_direcciones(latitud, longitud)
 	patentes: list = validar_patentes(rutas_fotos)
 	descripciones_audios: list = obtener_descripcion_audio(rutas_audios)
 	datos_Procesados: list = compaginar_datos_Procesados(datos_Brutos, fechas, direcciones ,patentes, descripciones_audios)
-	# for item in range(len(datos_Procesados)):
-	# 	if datos_Procesados[item][3] == None:
-	# 		datos_Procesados.pop(item)
+
 	for item in datos_Procesados:
 		if item[3]==None:
 			datos_Procesados.pop(datos_Procesados.index(item))
-	# for item in datos_Procesados:
-	# 	print(item)
-	# hay un None final
 
-	#escribir_archivo(datos_Procesados)
-	#infracciones_estadios(datos_Procesados)
-	#infracciones_del_centro(datos_Procesados)
+	escribir_archivo(datos_Procesados)
+	#FIN DE ITEM 2
+
+	infracciones_estadios(datos_Procesados)
+
+	infracciones_del_centro(datos_Procesados)
 
 	mostrar_infractor(datos_Brutos, datos_Procesados)
+
+	fechas_lista: list = obtener_lista_timestamp()
+	patente_sospechosa(fechas_lista)
+	graficar_denuncias_mensuales(fechas_lista)
+
 main()
