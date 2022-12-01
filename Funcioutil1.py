@@ -11,7 +11,7 @@ import requests
 def lectura_archivo()->list:
 	denuncias:list=[]
 	try:
-		with open ("denuncias.csv") as file:
+		with open ("denuncias_bis.csv") as file:
 			reader=csv.reader(file,delimiter=",")            
 			next(reader)
 			for linea in reader:
@@ -25,7 +25,7 @@ def escribir_archivo(denuncias_procesadas:list):
 	try:
 		with open ("denuncias_procesadas.csv","w",newline="") as new_file:
 			writer=csv.writer(new_file,delimiter=",")
-			header:list=["Timestamp","Teléfono", "Dirección","patente", "descripción texto","descripción audio"] 
+			header:list=["Fecha","Teléfono", "Dirección", "patente", "descripción texto","descripción audio"] 
 			writer.writerow(header)
 			writer.writerows(denuncias_procesadas)
 	except:
@@ -87,9 +87,9 @@ def infracciones_del_centro(infracciones_procesadas:list):
 		#la condicion del if basicamente pide que se encuentre dentro del rectangulo delimitado por las calles dadas
 		if ((lat>(zona_centro[0][0]) and lat<(zona_centro[1][0])) and (lon>(zona_centro[1][1]) and lon<(zona_centro[2][1]))):
 			infracciones_zona_centro.append(infracciones_procesadas[registro])
-
+	print("\nLas siguientes infracciones se produjeron en zona centro: ")
 	for registro in infracciones_zona_centro:
-		print (registro)
+		print (f"\n{registro}")
 	
 def infracciones_estadios(infracciones:list):
 #Recibe la lista de infracciones, muestra las 
@@ -105,39 +105,44 @@ def infracciones_estadios(infracciones:list):
 		elif (geodesic(monumental, coord_infraccion).kilometers<1):
 			infracciones_monumental.append(infracciones[registro])
 	
-	print ("Las siguientes infracciones se produjeron en las inmediaciones del estadio 'Alberto J. Armando'")
+	print ("\nLas siguientes infracciones se produjeron en las inmediaciones del estadio 'Alberto J. Armando'")
 	for item in infracciones_bombonera:
-		print(item)
-	print ("Las siguientes infracciones se produjeron en las inmediaciones del estadio 'Mas Monumental'")
+		print(f"\n{item}")
+	print ("\nLas siguientes infracciones se produjeron en las inmediaciones del estadio 'Mas Monumental'")
 	for item in infracciones_monumental:
 		print(item)
 #TERMINA GEOLOCALIZACIÓN
 
 #PATENTES:
 def mostrar_patente(ruta_imagen):
-    with open(ruta_imagen, 'rb') as fp:
-        response = requests.post(
-            'https://api.platerecognizer.com/v1/plate-reader/',
-            files=dict(upload=fp), 
-            headers={'Authorization': 'Token 73c1e1139caf83e709ae221bf85c7053e157672b'}) #Este Token se obtiene al registrarse en la web
-
-    if len(response.json()["results"]) == 0:
-        devolver = False #No se pudo detectar la patente
-    else:
-        for key, value in (response.json()).items():
-            if key == "results":
-                for valores in value: 
-                    for llave, info in valores.items(): 
-                        if llave == 'plate':    #Si la clave del diccionario es 'plate' te devuelve la info que tiene
-                            devolver = info
-    return(devolver)
+	with open(ruta_imagen, 'rb') as fp:
+		response = requests.post(
+			'https://api.platerecognizer.com/v1/plate-reader/',
+			files=dict(upload=fp), 
+			headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
+	# if len(response.json()["results"]) == 0:
+	# 	devolver = False #No se pudo detectar la patente
+	# else:
+	# 	for key, value in (response.json()).items():
+	# 		if key == "results":
+	# 			for valores in value: 
+	# 				for llave, info in valores.items(): 
+	# 					if llave == 'plate':    #Si la clave del diccionario es 'plate' te devuelve la info que tiene
+	# 						devolver = info
+	# return(devolver)
+		for key, value in (response.json()).items():
+			if key == "results":
+				for valores in value: 
+					patente: str = valores['plate']
+					# ojo el None :/
+					return patente
 
 def validar_patentes(lista):
-    """"Recibe imagenes Devuelve patentes o False si no se pudo detectar patente"""
-    patentes = []
-    for i in lista:
-        patentes.append(mostrar_patente(i))
-    return patentes
+	""""Recibe imagenes Devuelve patentes o False si no se pudo detectar patente"""
+	patentes = []
+	for i in lista:
+		patentes.append(mostrar_patente(i))
+	return patentes
 
 #TERMINA PATENTES
 
@@ -161,14 +166,14 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 #FECHA:
 def obtener_timestamp(lista_timestamp:list):
 
-    lista_fechas = list()
+	lista_fechas = list()
 			
-    for valores in lista_timestamp:
+	for valores in lista_timestamp:
 
-        valores = datetime.fromtimestamp(float(valores))
-        lista_fechas.append(valores)
+		valores = datetime.fromtimestamp(float(valores))
+		lista_fechas.append(valores)
 
-    return lista_fechas
+	return lista_fechas
 #TERMINA FECHA
 
 #PUNTO 5
@@ -260,12 +265,12 @@ def mostrar_mapa(lat: str, long: str):
 	plt.annotate("denuncia", xy = (x,y), xytext=(-20,20))
 	plt.show()
 
-def muestra_mapa(datos_Brutos, datos_Procesados):
+def mostrar_infractor(datos_Brutos, datos_Procesados):
 	patente: str = input("Ingrese la patente: ")
 	for i in range(len(datos_Procesados)):
-		if datos_Procesados[i][5]==patente:
+		if datos_Procesados[i][3] == patente:
 			indice: int = i
-	ruta_foto: str = datos_Brutos[i][4]
+	ruta_foto: str = datos_Brutos[indice][4]
 	mostrar_foto_patente(ruta_foto)
 
 	lat = datos_Brutos[indice][2]
@@ -339,22 +344,16 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 		rutas_fotos.append(datos_Brutos[registro][4])
 
 def compaginar_datos_Procesados(datos:list, fecha:list, direccion:list, patentes:list, descripciones_audios:list)->list:
-	desc_txt: list = datos[i][5]
+	
 	for i in range(len(datos)):
 		datos[i][0] = fecha[i]
 		datos[i][2] = direccion[i]
 		datos[i][3] = patentes[i]
-		datos[i][4] = desc_txt[i]
+		datos[i][4] = datos[i][5]
 		datos[i][5] = descripciones_audios[i]
-	
-	return datos
+		datos[i].pop(6)
 
-def procesar_Datos(datos_Brutos: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->list:
-	fecha: list = obtener_timestamp(datos_Brutos[0])
-	direccion: list = crear_lista_direcciones(latitud, longitud) # devuelve lista de dirección tras procesar latitud y longitud
-	patentes: list = validar_patentes(rutas_fotos) # devuelve lista de patentes tras procesar imágeness
-	descripciones_audios: list = obtener_descripcion_audio(rutas_audios) # devuelve lista de descripciones tras procesar audio
-	datos_Procesados: list = compaginar_datos_Procesados(datos_Brutos, fecha, direccion,patentes, descripciones_audios)
+	return datos
 
 def main()->None:
 	datos_Brutos: list = lectura_archivo() # obtiene matríz, recibe ruta del archivo csv
@@ -369,7 +368,21 @@ def main()->None:
 	fechas: list = obtener_timestamp(timestamps)
 	direcciones: list = crear_lista_direcciones(latitud, longitud)
 	patentes: list = validar_patentes(rutas_fotos)
-	print(patentes)
-	#escribir_archivo() 
+	descripciones_audios: list = obtener_descripcion_audio(rutas_audios)
+	datos_Procesados: list = compaginar_datos_Procesados(datos_Brutos, fechas, direcciones ,patentes, descripciones_audios)
+	# for item in range(len(datos_Procesados)):
+	# 	if datos_Procesados[item][3] == None:
+	# 		datos_Procesados.pop(item)
+	for item in datos_Procesados:
+		if item[3]==None:
+			datos_Procesados.pop(datos_Procesados.index(item))
+	# for item in datos_Procesados:
+	# 	print(item)
+	# hay un None final
 
+	#escribir_archivo(datos_Procesados)
+	#infracciones_estadios(datos_Procesados)
+	#infracciones_del_centro(datos_Procesados)
+
+	mostrar_infractor(datos_Brutos, datos_Procesados)
 main()
