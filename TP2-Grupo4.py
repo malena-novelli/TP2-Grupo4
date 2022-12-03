@@ -10,6 +10,10 @@ import requests
 import copy
 
 def lectura_archivo()->list:
+	""" Obj: Lee el archivo denuncias_bis
+		Pre:
+		Post:
+		"""
 	denuncias:list=[]
 	try:
 		with open ("denuncias_bis.csv") as file:
@@ -23,6 +27,10 @@ def lectura_archivo()->list:
 	return(denuncias)
 
 def escribir_archivo(denuncias_procesadas:list):
+	""" Obj: Toma una lista y la vuelca en un archivo creandolo o sobreescribiendolo 
+		Pre: Una lista con los datos a escribir
+		Post: Un archivo nuevo llamado ("denuncias procesadas") 
+		"""
 	try:
 		with open ("denuncias_procesadas.csv","w",newline="") as new_file:
 			writer=csv.writer(new_file,delimiter=",")
@@ -34,7 +42,10 @@ def escribir_archivo(denuncias_procesadas:list):
 
 #GEOLOCALIZACIÓN: 
 def obtener_direccion(latitud:str,longitud:str)->str:
-	#Recibe 2 strings con las coordenadas  y devuelve otro con la direccion    
+	""" Obj: Consigue una unica direccion mediante el uso de Geopy a partir de las coordenadas geograficas 
+		Pre: 2 strings, uno con la latitud y el otro con la longitud de interes
+		Post: 1 string con la direccion del lugar de interes 
+		"""    
 	geolocator= Nominatim(user_agent="TP2")
 	try:
 		direccion_de_infraccion=(str(geolocator.reverse(str(latitud)+","+str(longitud))))
@@ -43,7 +54,10 @@ def obtener_direccion(latitud:str,longitud:str)->str:
 	return(direccion_de_infraccion)
 
 def crear_lista_direcciones(latitud:list,longitud:list)->list:
-#Recibe las listas latitud y longitud, las procesa con geopy y consigue la direccion, devuelve una lista      
+	""" Obj: Genera una lista de str:direcciones mediante el uso de Geopy 
+		Pre: 2 listas de strings, una con las latitudes y otra con las longitudes
+		Post: 1 lista con direcciones de los lugares
+		"""	      
 	direcciones:list=[]
 
 	for registro in range (len(latitud)):
@@ -53,7 +67,10 @@ def crear_lista_direcciones(latitud:list,longitud:list)->list:
 	return(direcciones)
 
 def conseguir_coordenadas(direccion:str)->list:
-	#devuelve las coordenadas de la direccion indicada como una lista cuyos elementos son float
+	""" Obj: Consigue las coordenadas geograficas de una direccion especificada 
+		Pre: 1 string con la direccion solicitada
+		Post: 1 lista cuyos elementos son las [lat,long] de la direccion
+		"""	
 	geolocator= Nominatim(user_agent="TP2")
 	try:
 		lat=float(geolocator.geocode(direccion).point.latitude)
@@ -66,18 +83,23 @@ def conseguir_coordenadas(direccion:str)->list:
 	return(coordenadas)
 	
 def delimitar_zona_centro ()->list:
-
+	""" Obj: Recupera las coordenadas geograficas de la zona centrica y las empaqueta como lista de listas 
+		Pre: Sin parametros previo
+		Post: 1 lista de listas cuyos elementos son las [lat,long] de las esquinas de la zona centrica
+		"""	
 	coordenadas_esquina_a:list=conseguir_coordenadas("Av. Callao & Av. Rivadavia")
 	coordenadas_esquina_b:list=conseguir_coordenadas("Av. Callao & Av. Córdoba")
 	coordenadas_esquina_c:list=conseguir_coordenadas("Av. Leandro N. Alem & Av. Córdoba")
 	coordenadas_esquina_d:list=conseguir_coordenadas("Av. Rivadavia 100, Monserrat, Buenos Aires")
-
+	
 	zona_centro:list=[coordenadas_esquina_a,coordenadas_esquina_b,coordenadas_esquina_c,coordenadas_esquina_d]
-
 	return zona_centro
 
 def infracciones_del_centro(infracciones_procesadas:list):
-#Recibe la lista procesada, decide si la direccion esta o no en el area y muesta por pantalla aquellas q lo estan 
+	""" Obj: Decide si las infracciones se cometieron dentro de la zona indicada, muestra aquellas que lo estuvieron.  
+		Pre: Lista de infracciones ya procesadas con direcciones
+		Post: Muestra por pantalla una lista de infracciones en el area indicada
+		"""	 
 	zona_centro:list=delimitar_zona_centro()
 	infracciones_zona_centro:list=[]
 
@@ -93,12 +115,15 @@ def infracciones_del_centro(infracciones_procesadas:list):
 		print (f"\n{registro}")
 	
 def infracciones_estadios(infracciones:list):
-#Recibe la lista de infracciones, muestra las direcciones
+	""" Obj: Decide si las infracciones se cometieron a un radio de 1 km respecto a los estadios, muestra aquellas que lo estuvieron. 
+		Pre: Lista de infracciones ya procesadas con direcciones
+		Post: Muestra por pantalla una lista de infracciones en el area indicada
+		"""	
 	infracciones_bombonera:list=[]
 	infracciones_monumental:list=[]
 	bombonera:list=conseguir_coordenadas("estadio Alberto J. Armando")
 	monumental:list=conseguir_coordenadas("estadio Monumental")
-
+	
 	for registro in range (len(infracciones)):
 		coord_infraccion:list=conseguir_coordenadas(infracciones[registro][2])
 		if (geodesic(bombonera, coord_infraccion).kilometers<1):
