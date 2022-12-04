@@ -10,9 +10,9 @@ import requests
 import copy
 
 def lectura_archivo()->list:
-	""" Obj: Lee el archivo denuncias_bis
-		Pre:
-		Post:
+	""" Obj: Lee el archivo denuncias_bis y devuelve la informacion en una lista
+		Pre:Archivo a leer
+		Post: Lista con las lineas del archivo
 		"""
 	denuncias:list=[]
 	try:
@@ -140,52 +140,54 @@ def infracciones_estadios(infracciones:list):
 #TERMINA GEOLOCALIZACIÓN
 
 #PATENTES:
-def mostrar_patente(ruta_imagen):
+def mostrar_patente(ruta_imagen)->str:
+	""" Obj: Recibe una ruta de foto y devuelve la patente en caso de encontrar un automovil  
+		Pre: 1 Lista con rutas para las imagenes 
+		Post: 1 string con la patente
+	"""
 	with open(ruta_imagen, 'rb') as fp:
 		response = requests.post(
-			'https://api.platerecognizer.com/v1/plate-reader/',
-			files=dict(upload=fp), 
-			headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
-
+		'https://api.platerecognizer.com/v1/plate-reader/',
+		files=dict(upload=fp), 
+		headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
 		for key, value in (response.json()).items():
 			if key == "results":
 				for valores in value: 
 					patente: str = valores['plate']
 					return patente
 
-def validar_patentes(lista):
-	""""Recibe imagenes Devuelve patentes o False si no se pudo detectar patente"""
+def validar_patentes(lista:list):
+	""" Obj: Crea una lista con las patentes a partir de una lista de rutas  
+		Pre: Lista de datos con las rutas de las fotos
+		Post: Lista con las patentes de las fotografias
+	"""
 	patentes = []
 	for i in lista:
 		patentes.append(mostrar_patente(i))
 	return patentes
-
 #TERMINA PATENTES
 
 #DESCRIPCIÓN AUDIO:
 def obtener_descripcion_audio(rutas_audios:list)->list:
-
+	""" Obj: Crea una lista con los textos de los audios a partir de sus rutas  
+		Pre: Lista de datos con las rutas de audio
+		Post: Lista con los textos contenidos en los audios
+	"""
 	descripciones: list = []
 	for ruta in range(len(rutas_audios)):
 		r = sr.Recognizer()
-
 		with sr.AudioFile(rutas_audios[ruta]) as source:
 			audio = r.record(source)
 		
 		descripcion: str = r.recognize_google(audio, language ='es_AR')
-		
 		descripciones.append(descripcion)
-
 	return descripciones
 #TERMINA DESCRIPCIÓN AUDIO
 
 #FECHA:
 def obtener_timestamp(lista_timestamp:list):
-
 	lista_fechas = list()
-			
 	for valores in lista_timestamp:
-
 		valores = datetime.fromtimestamp(float(valores))
 		lista_fechas.append(valores)
 
@@ -193,54 +195,40 @@ def obtener_timestamp(lista_timestamp:list):
 #TERMINA FECHA
 
 #PUNTO 5
-
 def obtener_lista_timestamp()->list:
-
+	""" Obj: Lee el archivo de denuncias genera un archivo nuevo con timestamps y una lista a partir de el mismo.   
+		Pre: Libre de llamarse
+		Post: Lista con los timestamps
+	"""
 	datos: list = []
 	fechas: list = []
-
 	with open("denuncias_procesadas.csv", newline='') as archivo_csv:
-
 		next(archivo_csv)
-
 		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-
 		for lineas in csv_reader:
 			datos.append(lineas[0])
-
-
+	
 	with open("Timestamp.csv", 'w', newline ='') as archivo_csv:
-
 			csv_writer = csv.writer(archivo_csv)
-
 			csv_writer.writerow(["Timestamp"]) 
-
 			csv_writer.writerow(datos)
 
-
 	with open("Timestamp.csv", newline='') as archivo_csv:
-
 		next(archivo_csv)
-
 		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-
 		for lineas in csv_reader:
 			fechas.append(lineas)
-	
 	return fechas
 
 def patente_sospechosa(fechas:list)->None:
-
+	""" Obj: Lee los archivos de denuncias y de autos con pedido de captura y muestra por pantalla si hay coincidencias  
+		Pre: Lista con los timestamps
+		Post: Muestra por pantalla autos que tengan pedido de captura
+	"""
 	datos = list()
-
 	with open("denuncias_procesadas.csv", newline='') as archivo_csv:
-
-
 		next(archivo_csv)
-
 		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-
-
 		for lineas in csv_reader:
 			datos.append(lineas)
 
@@ -250,7 +238,6 @@ def patente_sospechosa(fechas:list)->None:
 			lineas = linea.rstrip("\n")
 			patentes_buscada.append(lineas)
 		patentes_buscada.pop(0)
-
 	patentes_alerta: dict = {}
 
 	for informacion in datos:
@@ -261,14 +248,21 @@ def patente_sospechosa(fechas:list)->None:
 		print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]} ')
 
 #TERMINA PUNTO 5
-
 #PUNTO 6:
 def mostrar_foto_patente(ruta_foto: str):
+	""" Obj: Mostrar la foto asociada a una dada ruta  
+		Pre: String con Ruta de la foto
+		Post: Muestra por pantalla la imagen asociada a la ruta indicada
+	"""
 	print("\nLa imágen asociada a la patente indicada es la siguiente: ")
 	im = Image.open(ruta_foto) 
 	im.show()
 
-def mostrar_mapa(lat: str, long: str):
+def mostrar_mapa(lat: str, long: str)->None:
+	""" Obj: Mostrar el mapa asociado a la direccion de una infraccion  
+		Pre: 2 str, el primero indica latitud y el otro longitud de la infraccion
+		Post: Muestra por pantalla el mapa asociado
+	"""
 	print("\nA continucación, un mapa con la ubicación del auto indicado, en el momento de la denuncia: ")
 	
 	map = Basemap(width=9000000,height=5000000,projection='lcc',
@@ -280,7 +274,11 @@ def mostrar_mapa(lat: str, long: str):
 	plt.annotate("denuncia", xy = (x,y), xytext=(-20,20))
 	plt.show()
 
-def mostrar_infractor(datos_Brutos: list, datos_Procesados: list):
+def mostrar_infractor(datos_Brutos: list, datos_Procesados: list)->None:
+	""" Obj: Muestra por pantalla la imagen y el mapa de una infraccion cometida por una patente indicada por el usuario  
+		Pre: 2 listas, una con los datos sin procesar y otra con los mismos procesados
+		Post: Muestra por pantalla la imagen del infractor y el mapa donde ocurrio 
+	"""
 	patente: str = input("Ingrese la patente: ")
 	for i in range(len(datos_Procesados)):
 		if datos_Procesados[i][3] == patente:
@@ -296,7 +294,12 @@ def mostrar_infractor(datos_Brutos: list, datos_Procesados: list):
 #TERMINA PUNTO 6
 
 # PUNTO 7: 
+
 def graficar_denuncias_mensuales(fechas:list)->None:
+	""" Obj: Muestra por pantalla un histograma con las infracciones mes a mes del año 2022  
+		Pre: 1 lista con las fechas de las infracciones
+		Post: Muestra por pantalla un histograma 
+	"""
 	fechas_timestamps: list = []
 	for fecha in fechas:
 		for horario in fecha:
@@ -353,7 +356,10 @@ def graficar_denuncias_mensuales(fechas:list)->None:
 #TERMINA PUNTO 7
 
 def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->None:
-
+	""" Obj: Crea "sub-listas" con cada campo de la matriz de datos obtenida a partir del archivo original  
+		Pre: Lista con los datos brutos de las infracciones, 5 listas donde recopilar la informacion
+		Post: 5 listas con los datos descompuestos de la matriz principal 
+	"""
 	for registro in range(len(datos_Brutos)):
 		timestamps.append(datos_Brutos[registro][0])
 		latitud.append(datos_Brutos[registro][2])
@@ -362,6 +368,10 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 		rutas_fotos.append(datos_Brutos[registro][4])
 
 def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, patentes:list, descripciones_audios:list)->list:
+	""" Obj: Crea una lista a partir de los datos recopilados en las sub listas procesadas  
+		Pre: Sub listas con los datos a integrarse en la matriz
+		Post: 1 lista con toda la informacion procesada y compaginada 
+	"""
 	datos_procesados: list = copy.deepcopy(datos_Brutos)
 	for i in range(len(datos_Brutos)):
 		datos_procesados[i][0] = fecha[i]
@@ -370,7 +380,6 @@ def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, p
 		datos_procesados[i][4] = datos_Brutos[i][5]
 		datos_procesados[i][5] = descripciones_audios[i]
 		datos_procesados[i].pop(6)
-
 	return datos_procesados
 
 def main()->None:
@@ -398,11 +407,8 @@ def main()->None:
 	#FIN DE ITEM 2
 
 	infracciones_estadios(datos_Procesados)
-
 	infracciones_del_centro(datos_Procesados)
-
 	mostrar_infractor(datos_Brutos, datos_Procesados)
-
 	fechas_lista: list = obtener_lista_timestamp()
 	patente_sospechosa(fechas_lista)
 	graficar_denuncias_mensuales(fechas_lista)
