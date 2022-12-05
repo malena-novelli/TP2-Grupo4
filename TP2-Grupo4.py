@@ -116,6 +116,7 @@ def infracciones_estadios(infracciones:list):
 
 #PATENTES:
 def mostrar_patente(ruta_imagen):
+	
 	with open(ruta_imagen, 'rb') as fp:
 		response = requests.post(
 			'https://api.platerecognizer.com/v1/plate-reader/',
@@ -146,12 +147,18 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 
 		with sr.AudioFile(rutas_audios[ruta]) as source:
 			audio = r.record(source)
-		
-		descripcion: str = r.recognize_google(audio, language ='es_AR')
-		
-		descripciones.append(descripcion)
+		try:
+			descripcion: str = r.recognize_google(audio, language ='es_AR')
+			
+			descripciones.append(descripcion)
+			
+		except sr.UnknownValueError:
+			print("\nNo fue posible entender el audio.")
+		except IOError:
+			print("\nNo se encontró el archivo deseado.")
 
 	return descripciones
+
 #TERMINA DESCRIPCIÓN AUDIO
 
 #FECHA:
@@ -240,8 +247,12 @@ def patente_sospechosa(fechas:list)->None:
 #PUNTO 6:
 def mostrar_foto_patente(ruta_foto: str):
 	print("\nLa imágen asociada a la patente indicada es la siguiente: ")
-	im = Image.open(ruta_foto) 
-	im.show()
+	try:
+		im = Image.open(ruta_foto) 
+		im.show()
+	except IOError:
+		print("\nNo se encontró el archivo de la foto asociada.")
+
 
 def mostrar_mapa(lat: str, long: str):
 	print("\nA continucación, un mapa con la ubicación del auto indicado, en el momento de la denuncia: ")
