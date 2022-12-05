@@ -6,6 +6,7 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from PIL import Image
 import datetime
+import time
 import requests
 import copy
 
@@ -41,13 +42,13 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 #PUNTO 2
 def obtener_timestamp(lista_timestamp:list)->list:
 	"""Obj: Convertir un serie de numeros str a una fecha timestamp
-       Pre: Recibe una lista con timestamps en formato str
-       Post: Devuelve una lista con timestamps en formato datetime
-    """
+	   Pre: Recibe una lista con timestamps en formato str
+	   Post: Devuelve una lista con timestamps en formato datetime
+	"""
 	lista_fechas: list = []	
 	for valores in lista_timestamp:
-        valores = datetime.fromtimestamp(float(valores))
-        lista_fechas.append(valores)
+		valores = datetime.datetime.fromtimestamp(float(valores))
+		lista_fechas.append(valores)
 	return lista_fechas
 
 def obtener_direccion(latitud:str,longitud:str)->str:
@@ -220,36 +221,36 @@ def infracciones_del_centro(infracciones_procesadas:list):
 #TERMINA PUNTO 4
 #PUNTO 5
 def patente_sospechosa()->None:
-    """Obj: Reconocer si un auto tiene pedido de captura
-       Pre: Recibe dos archivos, el primero que contenga patentes,fechas y direcciones. El segundo con patentes con pedido de captura
-       Post: Imprime por terminal la patente del auto, la fecha en que fue visto y en que direccion
-    """
-    datos: list = []
-    try:
-        with open("denuncias_procesadas.csv", newline='') as archivo_csv:
-            next(archivo_csv)
-            csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-            for lineas in csv_reader:
-                datos.append(lineas)
-    except IOError:
-        print("se produjo un error en la lectura del archivo" )
-    try:
-        with open("robados.txt", "r") as archivo:
-            patentes_buscada: list = []
-            for linea in archivo:
-                lineas = linea.rstrip("\n")
-                patentes_buscada.append(lineas)
-            patentes_buscada.pop(0)
-    except IOError:
-        print("se produjo un error en la lectura del archivo" )
+	"""Obj: Reconocer si un auto tiene pedido de captura
+	   Pre: Recibe dos archivos, el primero que contenga patentes,fechas y direcciones. El segundo con patentes con pedido de captura
+	   Post: Imprime por terminal la patente del auto, la fecha en que fue visto y en que direccion
+	"""
+	datos: list = []
+	try:
+		with open("denuncias_procesadas.csv", newline='') as archivo_csv:
+			next(archivo_csv)
+			csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
+			for lineas in csv_reader:
+				datos.append(lineas)
+	except IOError:
+		print("se produjo un error en la lectura del archivo" )
+	try:
+		with open("robados.txt", "r") as archivo:
+			patentes_buscada: list = []
+			for linea in archivo:
+				lineas = linea.rstrip("\n")
+				patentes_buscada.append(lineas)
+			patentes_buscada.pop(0)
+	except IOError:
+		print("se produjo un error en la lectura del archivo" )
 
-    patentes_alerta: dict = {}
+	patentes_alerta: dict = {}
 
-    for informacion in datos:
-        if informacion[3] in patentes_buscada:
-            patentes_alerta[informacion[3]] = [informacion[0], informacion[2]]
-    for key, valor in patentes_alerta.items():
-        print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]} ')
+	for informacion in datos:
+		if informacion[3] in patentes_buscada:
+			patentes_alerta[informacion[3]] = [informacion[0], informacion[2]]
+	for key, valor in patentes_alerta.items():
+		print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]} ')
 #TERMINA PUNTO 5
 #PUNTO 6:
 def mostrar_foto_patente(ruta_foto: str):
@@ -257,9 +258,12 @@ def mostrar_foto_patente(ruta_foto: str):
 		Pre: String con Ruta de la foto
 		Post: Muestra por pantalla la imagen asociada a la ruta indicada
 	"""
-	print("\nLa imágen asociada a la patente indicada es la siguiente: ")
-	im = Image.open(ruta_foto) 
-	im.show()
+	try: 
+		print("\nLa imágen asociada a la patente indicada es la siguiente: ")
+		im = Image.open(ruta_foto, 'r') 
+		im.show()
+	except IOError:
+		print("No se encontró el archivo de la foto asociada.")
 
 def mostrar_mapa(lat: str, long: str)->None:
 	""" Obj: Mostrar el mapa asociado a la direccion de una infraccion  
@@ -296,49 +300,49 @@ def mostrar_infractor(datos_Brutos: list, datos_Procesados: list)->None:
 #TERMINA PUNTO 6
 # PUNTO 7: 
 def calcular_denuncias_mensuales(fechas:list)->list:
-    """Obj: Obtener una lista con denuncias mensuales
-       Pre: Recibe una lista de timestamps de tipo int
-       Post: Devuelve una lista de numeros segun la cantidad de denuncias por mes
-    """
-    lista_fechas: list = []
-    cant_denuncias: dict = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0}
-    for fecha in fechas:
-        mes = fecha.month #Transforma a numero de mes el datetime
-        if mes in lista_fechas:
-            cant_denuncias[mes] += 1
-        else:
-            lista_fechas.append(mes)
-            cant_denuncias[mes] += 1
-    eje_y: list = [cant_denuncias[1],cant_denuncias[2],cant_denuncias[3],cant_denuncias[4],
+	"""Obj: Obtener una lista con denuncias mensuales
+	   Pre: Recibe una lista de timestamps de tipo int
+	   Post: Devuelve una lista de numeros segun la cantidad de denuncias por mes
+	"""
+	lista_fechas: list = []
+	cant_denuncias: dict = {1:0,2:0,3:0,4:0,5:0,6:0,7:0,8:0,9:0,10:0,11:0,12:0}
+	for fecha in fechas:
+		mes = fecha.month #Transforma a numero de mes el datetime
+		if mes in lista_fechas:
+			cant_denuncias[mes] += 1
+		else:
+			lista_fechas.append(mes)
+			cant_denuncias[mes] += 1
+	eje_y: list = [cant_denuncias[1],cant_denuncias[2],cant_denuncias[3],cant_denuncias[4],
 					cant_denuncias[5],cant_denuncias[6],cant_denuncias[7],cant_denuncias[8],
 					cant_denuncias[9],cant_denuncias[10],cant_denuncias[11],cant_denuncias[12]]
-    return eje_y
+	return eje_y
 
 def graficar_denuncias_mensuales(eje_y:list)->None:
-    """Obj: Graficar las denuncias mensualmente en el año 2022
-       Pre: Recibe una lista de numeros
-       Post: Devuelve por terminal un grafico de barras
-    """
-    x: list = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"]
-    y: list = eje_y
+	"""Obj: Graficar las denuncias mensualmente en el año 2022
+	   Pre: Recibe una lista de numeros
+	   Post: Devuelve por terminal un grafico de barras
+	"""
+	x: list = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"]
+	y: list = eje_y
 
-    plt.bar(x,y,color = 'tab:purple')
-    plt.xlabel('MESES', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
-    plt.ylabel('DENUNCIAS', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
-    plt.title('Denuncias registradas mensualmente', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
-    plt.show()
+	plt.bar(x,y,color = 'tab:purple')
+	plt.xlabel('MESES', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
+	plt.ylabel('DENUNCIAS', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
+	plt.title('Denuncias registradas mensualmente', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
+	plt.show()
 #TERMINA PUNTO 7
 #MENU
 def menu(listaOpciones):
-    """
-    Pre: Se reciben 1 parámetros con la lista de opciones a ser mostradas
-    Post: se retorna la opción seleccionada como entero.
-    """
-    for i in range(0, len(listaOpciones)):
-        print(i + 1, "- " + listaOpciones[i])
+	"""
+	Pre: Se reciben 1 parámetros con la lista de opciones a ser mostradas
+	Post: se retorna la opción seleccionada como entero.
+	"""
+	for i in range(0, len(listaOpciones)):
+		print(i + 1, "- " + listaOpciones[i])
 
-    op = int(input("Elija una opción, 0 para salir"))
-    return op
+	op = int(input("Elija una opción, 0 para salir: "))
+	return op
 #TERMINA MENU (Si quieren otro tipo de menu se puede cambiar, este lo paso Bruno al principio)
 
 def main()->None:
@@ -363,21 +367,21 @@ def main()->None:
 	escribir_archivo(datos_Procesados)
 	eje_y: list = calcular_denuncias_mensuales(fechas)
 
-	opciones = ["1) Mostrar infracciones en estadios", "2) Mostar infracciones en zona centro","3) Buscar patente sospechosa","4) Localizar infractor","5) Graficar denuncias mensuales"]
+	opciones = ["Mostrar infracciones en estadios", "Mostar infracciones en zona centro","Buscar patente sospechosa","Localizar infractor","Graficar denuncias mensuales"]
 
 	op = menu(opciones)
 
 	while op != 0:
-        if op == 1:
-            infracciones_estadios(datos_Procesados)
-        elif op == 2:
-            infracciones_del_centro(datos_Procesados)
-        elif op == 3:
-            patente_sospechosa()
-        elif op == 4:
-            mostrar_infractor(datos_Brutos, datos_Procesados)
-        elif op == 5:
-            graficar_denuncias_mensuales(eje_y)
-        op = menu(opciones)
+		if op == 1:
+			infracciones_estadios(datos_Procesados)
+		elif op == 2:
+			infracciones_del_centro(datos_Procesados)
+		elif op == 3:
+			patente_sospechosa()
+		elif op == 4:
+			mostrar_infractor(datos_Brutos, datos_Procesados)
+		elif op == 5:
+			graficar_denuncias_mensuales(eje_y)
+		op = menu(opciones)
 
 main()
