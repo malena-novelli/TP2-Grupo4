@@ -10,6 +10,10 @@ import requests
 import copy
 
 def lectura_archivo()->list:
+	""" Obj: Lee el archivo denuncias_bis y devuelve la informacion en una lista
+		Pre:Archivo a leer
+		Post: Lista con las lineas del archivo
+		"""
 	denuncias:list=[]
 	try:
 		with open ("denuncias_bis.csv") as file:
@@ -23,6 +27,10 @@ def lectura_archivo()->list:
 	return(denuncias)
 
 def escribir_archivo(denuncias_procesadas:list):
+	""" Obj: Toma una lista y la vuelca en un archivo creandolo o sobreescribiendolo 
+		Pre: Una lista con los datos a escribir
+		Post: Un archivo nuevo llamado ("denuncias procesadas") 
+		"""
 	try:
 		with open ("denuncias_procesadas.csv","w",newline="") as new_file:
 			writer=csv.writer(new_file,delimiter=",")
@@ -34,7 +42,10 @@ def escribir_archivo(denuncias_procesadas:list):
 
 #GEOLOCALIZACIÓN: 
 def obtener_direccion(latitud:str,longitud:str)->str:
-	#Recibe 2 strings con las coordenadas  y devuelve otro con la direccion    
+	""" Obj: Consigue una unica direccion mediante el uso de Geopy a partir de las coordenadas geograficas 
+		Pre: 2 strings, uno con la latitud y el otro con la longitud de interes
+		Post: 1 string con la direccion del lugar de interes 
+		"""    
 	geolocator= Nominatim(user_agent="TP2")
 	try:
 		direccion_de_infraccion=(str(geolocator.reverse(str(latitud)+","+str(longitud))))
@@ -43,7 +54,10 @@ def obtener_direccion(latitud:str,longitud:str)->str:
 	return(direccion_de_infraccion)
 
 def crear_lista_direcciones(latitud:list,longitud:list)->list:
-#Recibe las listas latitud y longitud, las procesa con geopy y consigue la direccion, devuelve una lista      
+	""" Obj: Genera una lista de str:direcciones mediante el uso de Geopy 
+		Pre: 2 listas de strings, una con las latitudes y otra con las longitudes
+		Post: 1 lista con direcciones de los lugares
+		"""	      
 	direcciones:list=[]
 
 	for registro in range (len(latitud)):
@@ -53,7 +67,10 @@ def crear_lista_direcciones(latitud:list,longitud:list)->list:
 	return(direcciones)
 
 def conseguir_coordenadas(direccion:str)->list:
-	#devuelve las coordenadas de la direccion indicada como una lista cuyos elementos son float
+	""" Obj: Consigue las coordenadas geograficas de una direccion especificada 
+		Pre: 1 string con la direccion solicitada
+		Post: 1 lista cuyos elementos son las [lat,long] de la direccion
+		"""	
 	geolocator= Nominatim(user_agent="TP2")
 	try:
 		lat=float(geolocator.geocode(direccion).point.latitude)
@@ -66,18 +83,23 @@ def conseguir_coordenadas(direccion:str)->list:
 	return(coordenadas)
 	
 def delimitar_zona_centro ()->list:
-
+	""" Obj: Recupera las coordenadas geograficas de la zona centrica y las empaqueta como lista de listas 
+		Pre: Sin parametros previo
+		Post: 1 lista de listas cuyos elementos son las [lat,long] de las esquinas de la zona centrica
+		"""	
 	coordenadas_esquina_a:list=conseguir_coordenadas("Av. Callao & Av. Rivadavia")
 	coordenadas_esquina_b:list=conseguir_coordenadas("Av. Callao & Av. Córdoba")
 	coordenadas_esquina_c:list=conseguir_coordenadas("Av. Leandro N. Alem & Av. Córdoba")
 	coordenadas_esquina_d:list=conseguir_coordenadas("Av. Rivadavia 100, Monserrat, Buenos Aires")
-
+	
 	zona_centro:list=[coordenadas_esquina_a,coordenadas_esquina_b,coordenadas_esquina_c,coordenadas_esquina_d]
-
 	return zona_centro
 
 def infracciones_del_centro(infracciones_procesadas:list):
-#Recibe la lista procesada, decide si la direccion esta o no en el area y muesta por pantalla aquellas q lo estan 
+	""" Obj: Decide si las infracciones se cometieron dentro de la zona indicada, muestra aquellas que lo estuvieron.  
+		Pre: Lista de infracciones ya procesadas con direcciones
+		Post: Muestra por pantalla una lista de infracciones en el area indicada
+		"""	 
 	zona_centro:list=delimitar_zona_centro()
 	infracciones_zona_centro:list=[]
 
@@ -93,12 +115,15 @@ def infracciones_del_centro(infracciones_procesadas:list):
 		print (f"\n{registro}")
 	
 def infracciones_estadios(infracciones:list):
-#Recibe la lista de infracciones, muestra las direcciones
+	""" Obj: Decide si las infracciones se cometieron a un radio de 1 km respecto a los estadios, muestra aquellas que lo estuvieron. 
+		Pre: Lista de infracciones ya procesadas con direcciones
+		Post: Muestra por pantalla una lista de infracciones en el area indicada
+		"""	
 	infracciones_bombonera:list=[]
 	infracciones_monumental:list=[]
 	bombonera:list=conseguir_coordenadas("estadio Alberto J. Armando")
 	monumental:list=conseguir_coordenadas("estadio Monumental")
-
+	
 	for registro in range (len(infracciones)):
 		coord_infraccion:list=conseguir_coordenadas(infracciones[registro][2])
 		if (geodesic(bombonera, coord_infraccion).kilometers<1):
@@ -116,35 +141,41 @@ def infracciones_estadios(infracciones:list):
 
 #PATENTES:
 def mostrar_patente(ruta_imagen):
-	
+	""" Obj: Recibe una ruta de foto y devuelve la patente en caso de encontrar un automovil  
+		Pre: 1 Lista con rutas para las imagenes 
+		Post: 1 string con la patente
+	"""
 	with open(ruta_imagen, 'rb') as fp:
 		response = requests.post(
-			'https://api.platerecognizer.com/v1/plate-reader/',
-			files=dict(upload=fp), 
-			headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
-
+		'https://api.platerecognizer.com/v1/plate-reader/',
+		files=dict(upload=fp), 
+		headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
 		for key, value in (response.json()).items():
 			if key == "results":
 				for valores in value: 
 					patente: str = valores['plate']
 					return patente
 
-def validar_patentes(lista):
-	""""Recibe imagenes Devuelve patentes o False si no se pudo detectar patente"""
+def validar_patentes(lista:list):
+	""" Obj: Crea una lista con las patentes a partir de una lista de rutas  
+		Pre: Lista de datos con las rutas de las fotos
+		Post: Lista con las patentes de las fotografias
+	"""
 	patentes = []
 	for i in lista:
 		patentes.append(mostrar_patente(i))
 	return patentes
-
 #TERMINA PATENTES
 
 #DESCRIPCIÓN AUDIO:
 def obtener_descripcion_audio(rutas_audios:list)->list:
-
+	""" Obj: Crea una lista con los textos de los audios a partir de sus rutas  
+		Pre: Lista de datos con las rutas de audio
+		Post: Lista con los textos contenidos en los audios
+	"""
 	descripciones: list = []
 	for ruta in range(len(rutas_audios)):
 		r = sr.Recognizer()
-
 		with sr.AudioFile(rutas_audios[ruta]) as source:
 			audio = r.record(source)
 		try:
@@ -156,18 +187,15 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 			print("\nNo fue posible entender el audio.")
 		except IOError:
 			print("\nNo se encontró el archivo deseado.")
-
+			
 	return descripciones
 
 #TERMINA DESCRIPCIÓN AUDIO
 
 #FECHA:
 def obtener_timestamp(lista_timestamp:list):
-
 	lista_fechas = list()
-			
 	for valores in lista_timestamp:
-
 		valores = datetime.fromtimestamp(float(valores))
 		lista_fechas.append(valores)
 
@@ -175,54 +203,40 @@ def obtener_timestamp(lista_timestamp:list):
 #TERMINA FECHA
 
 #PUNTO 5
-
 def obtener_lista_timestamp()->list:
-
+	""" Obj: Lee el archivo de denuncias genera un archivo nuevo con timestamps y una lista a partir de el mismo.   
+		Pre: Libre de llamarse
+		Post: Lista con los timestamps
+	"""
 	datos: list = []
 	fechas: list = []
-
 	with open("denuncias_procesadas.csv", newline='') as archivo_csv:
-
 		next(archivo_csv)
-
 		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-
 		for lineas in csv_reader:
 			datos.append(lineas[0])
-
-
+	
 	with open("Timestamp.csv", 'w', newline ='') as archivo_csv:
-
 			csv_writer = csv.writer(archivo_csv)
-
 			csv_writer.writerow(["Timestamp"]) 
-
 			csv_writer.writerow(datos)
 
-
 	with open("Timestamp.csv", newline='') as archivo_csv:
-
 		next(archivo_csv)
-
 		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-
 		for lineas in csv_reader:
 			fechas.append(lineas)
-	
 	return fechas
 
 def patente_sospechosa(fechas:list)->None:
-
+	""" Obj: Lee los archivos de denuncias y de autos con pedido de captura y muestra por pantalla si hay coincidencias  
+		Pre: Lista con los timestamps
+		Post: Muestra por pantalla autos que tengan pedido de captura
+	"""
 	datos = list()
-
 	with open("denuncias_procesadas.csv", newline='') as archivo_csv:
-
-
 		next(archivo_csv)
-
 		csv_reader = csv.reader(archivo_csv, delimiter=',', skipinitialspace= True)
-
-
 		for lineas in csv_reader:
 			datos.append(lineas)
 
@@ -232,7 +246,6 @@ def patente_sospechosa(fechas:list)->None:
 			lineas = linea.rstrip("\n")
 			patentes_buscada.append(lineas)
 		patentes_buscada.pop(0)
-
 	patentes_alerta: dict = {}
 
 	for informacion in datos:
@@ -243,9 +256,12 @@ def patente_sospechosa(fechas:list)->None:
 		print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]} ')
 
 #TERMINA PUNTO 5
-
 #PUNTO 6:
 def mostrar_foto_patente(ruta_foto: str):
+	""" Obj: Mostrar la foto asociada a una dada ruta  
+		Pre: String con Ruta de la foto
+		Post: Muestra por pantalla la imagen asociada a la ruta indicada
+	"""
 	print("\nLa imágen asociada a la patente indicada es la siguiente: ")
 	try:
 		im = Image.open(ruta_foto) 
@@ -254,7 +270,11 @@ def mostrar_foto_patente(ruta_foto: str):
 		print("\nNo se encontró el archivo de la foto asociada.")
 
 
-def mostrar_mapa(lat: str, long: str):
+def mostrar_mapa(lat: str, long: str)->None:
+	""" Obj: Mostrar el mapa asociado a la direccion de una infraccion  
+		Pre: 2 str, el primero indica latitud y el otro longitud de la infraccion
+		Post: Muestra por pantalla el mapa asociado
+	"""
 	print("\nA continucación, un mapa con la ubicación del auto indicado, en el momento de la denuncia: ")
 	
 	map = Basemap(width=9000000,height=5000000,projection='lcc',
@@ -266,7 +286,11 @@ def mostrar_mapa(lat: str, long: str):
 	plt.annotate("denuncia", xy = (x,y), xytext=(-20,20))
 	plt.show()
 
-def mostrar_infractor(datos_Brutos: list, datos_Procesados: list):
+def mostrar_infractor(datos_Brutos: list, datos_Procesados: list)->None:
+	""" Obj: Muestra por pantalla la imagen y el mapa de una infraccion cometida por una patente indicada por el usuario  
+		Pre: 2 listas, una con los datos sin procesar y otra con los mismos procesados
+		Post: Muestra por pantalla la imagen del infractor y el mapa donde ocurrio 
+	"""
 	patente: str = input("Ingrese la patente: ")
 	for i in range(len(datos_Procesados)):
 		if datos_Procesados[i][3] == patente:
@@ -282,7 +306,12 @@ def mostrar_infractor(datos_Brutos: list, datos_Procesados: list):
 #TERMINA PUNTO 6
 
 # PUNTO 7: 
+
 def graficar_denuncias_mensuales(fechas:list)->None:
+	""" Obj: Muestra por pantalla un histograma con las infracciones mes a mes del año 2022  
+		Pre: 1 lista con las fechas de las infracciones
+		Post: Muestra por pantalla un histograma 
+	"""
 	fechas_timestamps: list = []
 	for fecha in fechas:
 		for horario in fecha:
@@ -339,7 +368,10 @@ def graficar_denuncias_mensuales(fechas:list)->None:
 #TERMINA PUNTO 7
 
 def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->None:
-
+	""" Obj: Crea "sub-listas" con cada campo de la matriz de datos obtenida a partir del archivo original  
+		Pre: Lista con los datos brutos de las infracciones, 5 listas donde recopilar la informacion
+		Post: 5 listas con los datos descompuestos de la matriz principal 
+	"""
 	for registro in range(len(datos_Brutos)):
 		timestamps.append(datos_Brutos[registro][0])
 		latitud.append(datos_Brutos[registro][2])
@@ -348,6 +380,10 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 		rutas_fotos.append(datos_Brutos[registro][4])
 
 def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, patentes:list, descripciones_audios:list)->list:
+	""" Obj: Crea una lista a partir de los datos recopilados en las sub listas procesadas  
+		Pre: Sub listas con los datos a integrarse en la matriz
+		Post: 1 lista con toda la informacion procesada y compaginada 
+	"""
 	datos_procesados: list = copy.deepcopy(datos_Brutos)
 	for i in range(len(datos_Brutos)):
 		datos_procesados[i][0] = fecha[i]
@@ -356,7 +392,6 @@ def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, p
 		datos_procesados[i][4] = datos_Brutos[i][5]
 		datos_procesados[i][5] = descripciones_audios[i]
 		datos_procesados[i].pop(6)
-
 	return datos_procesados
 
 def main()->None:
@@ -384,11 +419,8 @@ def main()->None:
 	#FIN DE ITEM 2
 
 	infracciones_estadios(datos_Procesados)
-
 	infracciones_del_centro(datos_Procesados)
-
 	mostrar_infractor(datos_Brutos, datos_Procesados)
-
 	fechas_lista: list = obtener_lista_timestamp()
 	patente_sospechosa(fechas_lista)
 	graficar_denuncias_mensuales(fechas_lista)
