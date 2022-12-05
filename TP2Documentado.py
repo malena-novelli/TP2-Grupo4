@@ -24,10 +24,11 @@ def lectura_archivo()->list:
 			for linea in reader:
 				denuncias.append(linea)
 	except IOError:
-		print("se produjo un error en la lectura del archivo" )
+		print("\nSe produjo un error en la lectura del archivo" )
 
 	return denuncias
 #TERMINA PUNTO1
+
 def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->None:
 	""" Obj: Crea "sub-listas" con cada campo de la matriz de datos obtenida a partir del archivo original  
 		Pre: Lista con los datos brutos de las infracciones, 5 listas donde recopilar la informacion
@@ -39,6 +40,7 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 		longitud.append(datos_Brutos[registro][3])
 		rutas_audios.append(datos_Brutos[registro][6])
 		rutas_fotos.append(datos_Brutos[registro][4])
+
 #PUNTO 2
 def obtener_timestamp(lista_timestamp:list)->list:
 	"""Obj: Convertir un serie de numeros str a una fecha timestamp
@@ -60,7 +62,7 @@ def obtener_direccion(latitud:str,longitud:str)->str:
 	try:
 		direccion_de_infraccion=(str(geolocator.reverse(str(latitud)+","+str(longitud))))
 	except TimeoutError:
-		print("No se pudo acceder al proveedor para obtener los datos")
+		print("\nNo se pudo acceder al proveedor para obtener los datos")
 	return direccion_de_infraccion
 
 def crear_lista_direcciones(latitud:list,longitud:list)->list:
@@ -86,9 +88,9 @@ def conseguir_coordenadas(direccion:str)->list:
 		lon=float(geolocator.geocode(direccion).point.longitude)
 		coordenadas:list=[lat,lon]
 	except TimeoutError: 
-		print ("Hubo un error al conseguir los datos, verifique su conexion.")
+		print ("\nHubo un error al conseguir los datos, verifique su conexion.")
 	except:
-		print( "No se pudo localizar la dirección.")       
+		print( "\nNo se pudo localizar la dirección.")       
 	return coordenadas
 
 def mostrar_patente(ruta_imagen)->str:
@@ -96,16 +98,19 @@ def mostrar_patente(ruta_imagen)->str:
 		Pre: 1 Lista con rutas para las imagenes 
 		Post: 1 string con la patente
 	"""
-	with open(ruta_imagen, 'rb') as fp:
-		response = requests.post(
-		'https://api.platerecognizer.com/v1/plate-reader/',
-		files=dict(upload=fp), 
-		headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
-		for key, value in (response.json()).items():
-			if key == "results":
-				for valores in value: 
-					patente: str = valores['plate']
-					return patente
+	try:
+		with open(ruta_imagen, 'rb') as fp:
+			response = requests.post(
+			'https://api.platerecognizer.com/v1/plate-reader/',
+			files=dict(upload=fp), 
+			headers={'Authorization': 'Token 15ca3097b892584724d956a3feed60f32614585c'}) #Este Token se obtiene al registrarse en la web
+			for key, value in (response.json()).items():
+				if key == "results":
+					for valores in value: 
+						patente: str = valores['plate']
+						return patente
+	except IOError:
+		print("\nNo se encontró la ruta del archivo.")
 
 def validar_patentes(lista:list)->list:
 	""" Obj: Crea una lista con las patentes a partir de una lista de rutas  
@@ -127,9 +132,16 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 		r = sr.Recognizer()
 		with sr.AudioFile(rutas_audios[ruta]) as source:
 			audio = r.record(source)
-		
-		descripcion: str = r.recognize_google(audio, language ='es_AR')
-		descripciones.append(descripcion)
+		try:
+			descripcion: str = r.recognize_google(audio, language ='es_AR')
+			
+			descripciones.append(descripcion)
+			
+		except sr.UnknownValueError:
+			print("\nNo fue posible entender el audio.")
+		except IOError:
+			print("\nNo se encontró el archivo deseado.")
+
 	return descripciones
 
 def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, patentes:list, descripciones_audios:list)->list:
@@ -138,6 +150,7 @@ def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, p
 		Post: 1 lista con toda la informacion procesada y compaginada 
 	"""
 	datos_procesados: list = copy.deepcopy(datos_Brutos)
+
 	for i in range(len(datos_Brutos)):
 		datos_procesados[i][0] = fecha[i]
 		datos_procesados[i][2] = direccion[i]
@@ -145,6 +158,7 @@ def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, p
 		datos_procesados[i][4] = datos_Brutos[i][5]
 		datos_procesados[i][5] = descripciones_audios[i]
 		datos_procesados[i].pop(6)
+
 	return datos_procesados
 
 def escribir_archivo(denuncias_procesadas:list):
@@ -159,8 +173,9 @@ def escribir_archivo(denuncias_procesadas:list):
 			writer.writerow(header)
 			writer.writerows(denuncias_procesadas)
 	except:
-		print("Se produjo un error al generar el archivo")
+		print("\nSe produjo un error al generar el archivo")
 #TERMINA PUNTO 2
+
 #PUNTO 3
 def infracciones_estadios(infracciones:list):
 	""" Obj: Decide si las infracciones se cometieron a un radio de 1 km respecto a los estadios, muestra aquellas que lo estuvieron. 
@@ -184,8 +199,9 @@ def infracciones_estadios(infracciones:list):
 		print(f"\n{item}")
 	print ("\nLas siguientes infracciones se produjeron en las inmediaciones del estadio 'Mas Monumental'")
 	for item in infracciones_monumental:
-		print(item)
+		print(f"\n{item}")
 #TERMINA PUNTO 3
+
 #PUNTO 4
 def delimitar_zona_centro ()->list:
 	""" Obj: Recupera las coordenadas geograficas de la zona centrica y las empaqueta como lista de listas 
@@ -219,6 +235,7 @@ def infracciones_del_centro(infracciones_procesadas:list):
 	for registro in infracciones_zona_centro:
 		print (f"\n{registro}")
 #TERMINA PUNTO 4
+
 #PUNTO 5
 def patente_sospechosa()->None:
 	"""Obj: Reconocer si un auto tiene pedido de captura
@@ -233,7 +250,7 @@ def patente_sospechosa()->None:
 			for lineas in csv_reader:
 				datos.append(lineas)
 	except IOError:
-		print("se produjo un error en la lectura del archivo" )
+		print("\nSe produjo un error en la lectura del archivo." )
 	try:
 		with open("robados.txt", "r") as archivo:
 			patentes_buscada: list = []
@@ -242,7 +259,7 @@ def patente_sospechosa()->None:
 				patentes_buscada.append(lineas)
 			patentes_buscada.pop(0)
 	except IOError:
-		print("se produjo un error en la lectura del archivo" )
+		print("\nSe produjo un error en la lectura del archivo." )
 
 	patentes_alerta: dict = {}
 
@@ -250,8 +267,9 @@ def patente_sospechosa()->None:
 		if informacion[3] in patentes_buscada:
 			patentes_alerta[informacion[3]] = [informacion[0], informacion[2]]
 	for key, valor in patentes_alerta.items():
-		print(f'El auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]} ')
+		print(f'\nEl auto de patente {key} tiene pedido de captura. Visto el dia {valor[0]} en {valor[1]}.')
 #TERMINA PUNTO 5
+
 #PUNTO 6:
 def mostrar_foto_patente(ruta_foto: str):
 	""" Obj: Mostrar la foto asociada a una dada ruta  
@@ -286,7 +304,7 @@ def mostrar_infractor(datos_Brutos: list, datos_Procesados: list)->None:
 		Pre: 2 listas, una con los datos sin procesar y otra con los mismos procesados
 		Post: Muestra por pantalla la imagen del infractor y el mapa donde ocurrio 
 	"""
-	patente: str = input("Ingrese la patente: ")
+	patente: str = input("\nIngrese la patente: ")
 	for i in range(len(datos_Procesados)):
 		if datos_Procesados[i][3] == patente:
 			indice: int = i
@@ -298,6 +316,7 @@ def mostrar_infractor(datos_Brutos: list, datos_Procesados: list)->None:
 	long = datos_Brutos[indice][3]
 	mostrar_mapa(lat, long)
 #TERMINA PUNTO 6
+
 # PUNTO 7: 
 def calcular_denuncias_mensuales(fechas:list)->list:
 	"""Obj: Obtener una lista con denuncias mensuales
@@ -332,7 +351,8 @@ def graficar_denuncias_mensuales(eje_y:list)->None:
 	plt.title('Denuncias registradas mensualmente', fontdict = {'fontsize':12, 'fontweight':'bold', 'color':'g'})
 	plt.show()
 #TERMINA PUNTO 7
-#MENU
+
+#MENÚ
 def menu(listaOpciones):
 	"""
 	Pre: Se reciben 1 parámetros con la lista de opciones a ser mostradas
@@ -341,9 +361,9 @@ def menu(listaOpciones):
 	for i in range(0, len(listaOpciones)):
 		print(i + 1, "- " + listaOpciones[i])
 
-	op = int(input("Elija una opción, 0 para salir: "))
+	op = int(input("\nElija una opción, 0 para salir: "))
 	return op
-#TERMINA MENU (Si quieren otro tipo de menu se puede cambiar, este lo paso Bruno al principio)
+#TERMINA MENÚ
 
 def main()->None:
 	datos_Brutos: list = lectura_archivo()
