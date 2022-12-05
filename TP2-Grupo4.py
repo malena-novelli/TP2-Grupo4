@@ -140,7 +140,7 @@ def infracciones_estadios(infracciones:list):
 #TERMINA GEOLOCALIZACIÓN
 
 #PATENTES:
-def mostrar_patente(ruta_imagen)->str:
+def mostrar_patente(ruta_imagen):
 	""" Obj: Recibe una ruta de foto y devuelve la patente en caso de encontrar un automovil  
 		Pre: 1 Lista con rutas para las imagenes 
 		Post: 1 string con la patente
@@ -178,10 +178,18 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 		r = sr.Recognizer()
 		with sr.AudioFile(rutas_audios[ruta]) as source:
 			audio = r.record(source)
-		
-		descripcion: str = r.recognize_google(audio, language ='es_AR')
-		descripciones.append(descripcion)
+		try:
+			descripcion: str = r.recognize_google(audio, language ='es_AR')
+			
+			descripciones.append(descripcion)
+			
+		except sr.UnknownValueError:
+			print("\nNo fue posible entender el audio.")
+		except IOError:
+			print("\nNo se encontró el archivo deseado.")
+			
 	return descripciones
+
 #TERMINA DESCRIPCIÓN AUDIO
 
 #FECHA:
@@ -255,8 +263,12 @@ def mostrar_foto_patente(ruta_foto: str):
 		Post: Muestra por pantalla la imagen asociada a la ruta indicada
 	"""
 	print("\nLa imágen asociada a la patente indicada es la siguiente: ")
-	im = Image.open(ruta_foto) 
-	im.show()
+	try:
+		im = Image.open(ruta_foto) 
+		im.show()
+	except IOError:
+		print("\nNo se encontró el archivo de la foto asociada.")
+
 
 def mostrar_mapa(lat: str, long: str)->None:
 	""" Obj: Mostrar el mapa asociado a la direccion de una infraccion  
