@@ -295,7 +295,6 @@ def mostrar_mapa(lat: str, long: str)->None:
 	map.bluemarble()
 	x, y = map(long, lat)
 	map.plot(x,y,marker='o',color='Red',markersize=5)
-	plt.annotate("denuncia", xy = (x,y), xytext=(-20,20))
 	plt.show()
 
 def mostrar_infractor(datos_Brutos: list, datos_Procesados: list)->None:
