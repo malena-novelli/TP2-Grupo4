@@ -114,7 +114,7 @@ def mostrar_patente(ruta_imagen)->str:
 	except IOError:
 		print("\nNo se encontró la ruta del archivo.")
 
-def validar_patentes(lista:list)->list:
+def crear_lista_patentes(lista:list)->list:
 	""" Obj: Crea una lista con las patentes a partir de una lista de rutas  
 		Pre: Lista de datos con las rutas de las fotos
 		Post: Lista con las patentes de las fotografias
@@ -168,7 +168,7 @@ def escribir_archivo(denuncias_procesadas:list)->None:
 	try:
 		with open ("denuncias_procesadas.csv","w",newline="") as new_file:
 			writer=csv.writer(new_file,delimiter=",")
-			header:list=["Fecha","Teléfono", "Dirección", "patente", "descripción texto","descripción audio"] 
+			header:list=["Fecha","Teléfono", "Dirección", "Patente", "Descripción texto","Descripción audio"] 
 			writer.writerow(header)
 			writer.writerows(denuncias_procesadas)
 	except:
@@ -375,17 +375,18 @@ def main()->None:
 	
 	fechas: list = obtener_timestamp(timestamps)
 	direcciones: list = crear_lista_direcciones(latitud, longitud)
-	patentes: list = validar_patentes(rutas_fotos)
+	patentes: list = crear_lista_patentes(rutas_fotos)
 	descripciones_audios: list = obtener_descripcion_audio(rutas_audios)
 	datos_Procesados: list = compaginar_datos_Procesados(datos_Brutos, fechas, direcciones ,patentes, descripciones_audios)
+	
+	eje_y: list = calcular_denuncias_mensuales(fechas)
 
 	for item in datos_Procesados:
 		if item[3]==None:
 			datos_Procesados.pop(datos_Procesados.index(item))
 
 	escribir_archivo(datos_Procesados)
-	eje_y: list = calcular_denuncias_mensuales(fechas)
-
+	
 	opciones = ["Mostrar infracciones en estadios", "Mostar infracciones en zona centro","Buscar patente sospechosa","Localizar infractor","Graficar denuncias mensuales"]
 
 	op = menu(opciones)
