@@ -27,6 +27,7 @@ def lectura_archivo()->list:
 		print("\nSe produjo un error en la lectura del archivo" )
 
 	return denuncias
+
 #TERMINA PUNTO1
 
 def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, longitud: list, rutas_audios: list, rutas_fotos: list)->None:
@@ -42,6 +43,7 @@ def obtener_datos_Brutos(datos_Brutos: list, timestamps: list, latitud: list, lo
 		rutas_fotos.append(datos_Brutos[registro][4])
 
 #PUNTO 2
+
 def obtener_timestamp(lista_timestamp:list)->list:
 	"""Obj: Convertir un serie de numeros str a una fecha timestamp
 	   Pre: Recibe una lista con timestamps en formato str
@@ -134,7 +136,6 @@ def obtener_descripcion_audio(rutas_audios:list)->list:
 			audio = r.record(source)
 		try:
 			descripcion: str = r.recognize_google(audio, language ='es_AR')
-			
 			descripciones.append(descripcion)
 			
 		except sr.UnknownValueError:
@@ -150,7 +151,6 @@ def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, p
 		Post: 1 lista con toda la informacion procesada y compaginada 
 	"""
 	datos_procesados: list = copy.deepcopy(datos_Brutos)
-
 	for i in range(len(datos_Brutos)):
 		datos_procesados[i][0] = fecha[i]
 		datos_procesados[i][2] = direccion[i]
@@ -158,10 +158,9 @@ def compaginar_datos_Procesados(datos_Brutos:list, fecha:list, direccion:list, p
 		datos_procesados[i][4] = datos_Brutos[i][5]
 		datos_procesados[i][5] = descripciones_audios[i]
 		datos_procesados[i].pop(6)
-
 	return datos_procesados
 
-def escribir_archivo(denuncias_procesadas:list):
+def escribir_archivo(denuncias_procesadas:list)->None:
 	""" Obj: Toma una lista y la vuelca en un archivo creandolo o sobreescribiendolo 
 		Pre: Una lista con los datos a escribir
 		Post: Un archivo nuevo llamado ("denuncias procesadas") 
@@ -177,7 +176,7 @@ def escribir_archivo(denuncias_procesadas:list):
 #TERMINA PUNTO 2
 
 #PUNTO 3
-def infracciones_estadios(infracciones:list):
+def infracciones_estadios(infracciones:list)->None:
 	""" Obj: Decide si las infracciones se cometieron a un radio de 1 km respecto a los estadios, muestra aquellas que lo estuvieron. 
 		Pre: Lista de infracciones ya procesadas con direcciones
 		Post: Muestra por pantalla una lista de infracciones en el area indicada
@@ -216,7 +215,7 @@ def delimitar_zona_centro ()->list:
 	zona_centro:list=[coordenadas_esquina_a,coordenadas_esquina_b,coordenadas_esquina_c,coordenadas_esquina_d]
 	return zona_centro
 
-def infracciones_del_centro(infracciones_procesadas:list):
+def infracciones_del_centro(infracciones_procesadas:list)->None:
 	""" Obj: Decide si las infracciones se cometieron dentro de la zona indicada, muestra aquellas que lo estuvieron.  
 		Pre: Lista de infracciones ya procesadas con direcciones
 		Post: Muestra por pantalla una lista de infracciones en el area indicada
@@ -250,7 +249,7 @@ def patente_sospechosa()->None:
 			for lineas in csv_reader:
 				datos.append(lineas)
 	except IOError:
-		print("\nSe produjo un error en la lectura del archivo." )
+		print("\nSe produjo un error en la lectura del archivo" )
 	try:
 		with open("robados.txt", "r") as archivo:
 			patentes_buscada: list = []
@@ -259,7 +258,7 @@ def patente_sospechosa()->None:
 				patentes_buscada.append(lineas)
 			patentes_buscada.pop(0)
 	except IOError:
-		print("\nSe produjo un error en la lectura del archivo." )
+		print("\nSe produjo un error en la lectura del archivo" )
 
 	patentes_alerta: dict = {}
 
@@ -271,7 +270,7 @@ def patente_sospechosa()->None:
 #TERMINA PUNTO 5
 
 #PUNTO 6:
-def mostrar_foto_patente(ruta_foto: str):
+def mostrar_foto_patente(ruta_foto: str)->None:
 	""" Obj: Mostrar la foto asociada a una dada ruta  
 		Pre: String con Ruta de la foto
 		Post: Muestra por pantalla la imagen asociada a la ruta indicada
@@ -281,7 +280,7 @@ def mostrar_foto_patente(ruta_foto: str):
 		im = Image.open(ruta_foto, 'r') 
 		im.show()
 	except IOError:
-		print("No se encontró el archivo de la foto asociada.")
+		print("\nNo se encontró el archivo de la foto asociada.")
 
 def mostrar_mapa(lat: str, long: str)->None:
 	""" Obj: Mostrar el mapa asociado a la direccion de una infraccion  
@@ -353,7 +352,7 @@ def graficar_denuncias_mensuales(eje_y:list)->None:
 #TERMINA PUNTO 7
 
 #MENÚ
-def menu(listaOpciones):
+def menu(listaOpciones)->None:
 	"""
 	Pre: Se reciben 1 parámetros con la lista de opciones a ser mostradas
 	Post: se retorna la opción seleccionada como entero.
@@ -363,7 +362,7 @@ def menu(listaOpciones):
 
 	op = int(input("\nElija una opción, 0 para salir: "))
 	return op
-#TERMINA MENÚ
+#TERMINA MENÚ 
 
 def main()->None:
 	datos_Brutos: list = lectura_archivo()
